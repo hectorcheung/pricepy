@@ -9,6 +9,8 @@ import glob
 from datetime import datetime, timedelta, date
 import re
 
+#pip install -r requirements.txt
+
 def panafoto():
     inicio = datetime.now()
     chrome_options = Options()
@@ -369,8 +371,10 @@ def panafoto2():
     chrome_options.add_argument("--headless")
     chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
     print(inicio)
+    datos = []
     marcas = ['lg', 'samsung', 'sony', 'panasonic']
-    cats = ['TV%20Y%20VIDEO','AUDIO','HOGAR','CELLARES%20Y%20TABLETS']
+    cats = ['TV%20Y%20VIDEO','AUDIO','HOGAR','CELLARES%20Y%20TABLETS','CÓMPUTO']
+    cat3 = "SMARTPHONES"
     cols = ['# cat', 'datos', 'precios']
     sku = pd.DataFrame(columns=cols)
     cols2 = ['url', 'link']
@@ -381,101 +385,101 @@ def panafoto2():
         precios = []
         datas = []
         paginas = []
-        url = 'https://www.panafoto.com/categorias/marcas/{}/'.format(marca)
-        if marca == 'sony':
-            url = 'https://www.panafoto.com/categorias/marcas/sony/?cat3=TELEVISOR'
-        elif marca == 'panasonic':
-            url = 'https://www.panafoto.com/categorias/marcas/panasonic/?cat3=AIRES%20ACONDICIONADOS%20SPLIT'
-        else:
-            url = url
-        driver_path = 'D:\chromedriver.exe'
-        driver = webdriver.Chrome(
-            executable_path=driver_path, options=chrome_options)
-        driver.implicitly_wait(15)
-        driver.get(url)
-        time.sleep(7)
-        text = driver.page_source
-        driver.quit()
-        soup = BeautifulSoup(text, "lxml")
-        pages = soup.select('span[itemprop="numberOfItems"]')
-        print(pages)
-        num = pages[0].text
-        print(num)
-        x = math.ceil(int(num)/9)
+        for cat in cats:
+            if (marca == "sony" and (cat != "TV%20Y%20VIDEO" or cat != "AUDIO")) or (marca == "panasonic" and cat != "HOGAR") or (marca=="lg") or (marca=="samsung"):
+                url = 'https://www.panafoto.com/categorias/marcas/{}/?cat1={}'.format(marca,cat)
+                if cat == "CELLARES%20Y%20TABLETS":
+                    url = 'https://www.panafoto.com/categorias/marcas/{}/?cat1={}&cat3={}'.format(marca,cat,cat3)
+                if marca == "panasonic":
+                    url = 'https://www.panafoto.com/categorias/marcas/{}/?cat1={}&cat3=AIRES%20ACONDICIONADOS%20SPLIT'.format(marca,cat)
+                print(marca, cat)
+                driver_path = 'C:\chromedriver.exe'
+                driver = webdriver.Chrome(
+                    executable_path=driver_path, options=chrome_options)
+                driver.implicitly_wait(15)
+                driver.get(url)
+                time.sleep(7)
+                text = driver.page_source
+                driver.quit()
+                soup = BeautifulSoup(text, "lxml")
+                pages = soup.select('span[itemprop="numberOfItems"]')
+                print(pages)
+                num = pages[0].text
+                print(num)
+                x = math.ceil(int(num)/9)
 
-        for i in range(x):
-            j = i + 1
-            if (marca == 'panasonic') | (marca == 'sony'):
-                url2 = url + "&page=" + str(j)
-            else:
-                url2 = url + "?page=" + str(j)
-            paginas.append(url2)
-        for pagina in paginas:
-            driver = webdriver.Chrome(
-                executable_path=driver_path, options=chrome_options)
-            driver.implicitly_wait(15)
-            print("Estamos en la " + pagina)
-            driver.get(pagina)
-            time.sleep(6)
-            text = driver.page_source
-            driver.quit()
-            soup = BeautifulSoup(text, "lxml")
-            results = soup.find_all('a', itemprop="url")
-            for result in results:
-                link = result['href']
-                links.append(link)
-                to_append2 = [pagina, link]
-                df_length2 = len(df_link)
-                df_link.loc[df_length2] = to_append2
+                for i in range(x):
+                    j = i + 1
+                    url2 = url + "&page=" + str(j)
+                    paginas.append(url2)
+                for pagina in paginas:
+                    driver = webdriver.Chrome(
+                        executable_path=driver_path, options=chrome_options)
+                    driver.implicitly_wait(15)
+                    print("Estamos en la " + pagina)
+                    driver.get(pagina)
+                    time.sleep(6)
+                    text = driver.page_source
+                    driver.quit()
+                    soup = BeautifulSoup(text, "lxml")
+                    results = soup.find_all('a', itemprop="url")
+                    for result in results:
+                        link = result['href']
+                        links.append(link)
+                        to_append2 = [pagina, link]
+                        df_length2 = len(df_link)
+                        df_link.loc[df_length2] = to_append2
 
-        for i in links:
-            print("Estamos en la " + i)
-            driver = webdriver.Chrome(
-                executable_path=driver_path, options=chrome_options)
-            driver.implicitly_wait(15)
-            driver.get(i)
-            time.sleep(3)
-            text = driver.page_source
-            driver.quit()
-            soup = BeautifulSoup(text, "lxml")
-            #prices = soup.find_all('span',class_="price")
-            #productids = soup.find_all('div',class_="price-box price-final_price")
-            productids = soup.select("div.price-box.price-final_price")
-            try:
-                productid = productids[0]['data-product-id']
-                print(productid)
-                att = 'product-price-' + str(productid)
-                prices2 = soup.find_all('span', id=att)
-                att2 = "old-price-" + str(productid)
-                prices3 = soup.find_all('span', id=att2)
-                if len(prices3) > 0:
-                    offer = prices2[0]['data-price-amount']
-                    tag = prices3[0]['data-price-amount']
-                else:
-                    offer = prices2[0]['data-price-amount']
-                    tag = prices2[0]['data-price-amount']
-                precios = [offer, tag]
+                for i in links:
+                    print("Estamos en la " + i)
+                    driver = webdriver.Chrome(
+                        executable_path=driver_path, options=chrome_options)
+                    driver.implicitly_wait(15)
+                    driver.get(i)
+                    time.sleep(3)
+                    text = driver.page_source
+                    driver.quit()
+                    soup = BeautifulSoup(text, "lxml")
+                    #prices = soup.find_all('span',class_="price")
+                    #productids = soup.find_all('div',class_="price-box price-final_price")
+                    productids = soup.select("div.price-box.price-final_price")
+                    try:
+                        productid = productids[0]['data-product-id']
+                        print(productid)
+                        att = 'product-price-' + str(productid)
+                        prices2 = soup.find_all('span', id=att)
+                        att2 = "old-price-" + str(productid)
+                        prices3 = soup.find_all('span', id=att2)
+                        if len(prices3) > 0:
+                            offer = prices2[0]['data-price-amount']
+                            tag = prices3[0]['data-price-amount']
+                        else:
+                            offer = prices2[0]['data-price-amount']
+                            tag = prices2[0]['data-price-amount']
+                        precios = [offer, tag]
 
-                infos = soup.find_all('div', class_="attribute-value")
-                # for i, price in enumerate(prices, start=1):
-                #precio = price.text
-                # if i <=2:
-                # precios.append(precio)
-                for info in infos:
-                    data = info.text
-                    datas.append(data)
-                data_list = ','.join(datas)
-                price_list = ','.join(precios)
-                categorias = len(datas)
-                to_append = [categorias, data_list, price_list]
-                df_length = len(sku)
-                print(to_append)
-                sku.loc[df_length] = to_append
-                sku.to_excel('sku pf preview.xlsx', index=None)
-                datas = []
-                precios = []
-            except:
-                print("skipped {}".format(i))
+                        infos = soup.find_all('div', class_="attribute-value")
+                        # for i, price in enumerate(prices, start=1):
+                        #precio = price.text
+                        # if i <=2:
+                        # precios.append(precio)
+                        for info in infos:
+                            data = info.text
+                            datas.append(data)
+                        data_list = ','.join(datas)
+                        price_list = ','.join(precios)
+                        categorias = len(datas)
+                        to_append = [categorias, data_list, price_list]
+                        df_length = len(sku)
+                        print(to_append)
+                        sku.loc[df_length] = to_append
+                        sku.to_excel('sku pf preview.xlsx', index=None)
+                        datas = []
+                        precios = []
+                    except Exception as e: 
+                        print(e)
+                        print("skipped {}".format(i))
+            
     x = datetime.now()
     y = x.strftime("%Y%m%d%H%M")
     df_link.to_excel('pf_link.xlsx', index=None)
@@ -499,8 +503,7 @@ def panafoto2():
     df.sort_values(by=['PG1', 'PG2', 'Offer'], ascending=[
                    True, True, False], inplace=True)
     df.to_excel('panafoto_sku {}.xlsx'.format(y), index=None)
-    df.to_json('pf3.json', orient='index')
-    df.to_json('pf2.json', orient='records')
+    df.to_json('pf.json', orient='records')
     final = datetime.now() - inicio
     print(final)
 
